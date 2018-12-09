@@ -6,6 +6,7 @@
 #include <set>
 #include <map>
 #include <deque>
+#include <list>
 
 #include <inttypes.h>
 
@@ -86,10 +87,14 @@ bool compare_string( string &string_1, string &string_2 )
    return 0;
 }
 
+typedef int elf_id_t;
+
 int main(int argc, char *argv[])
 {
    char line[LINE_SIZE];
-   map < int,  map < int, char > > cloth;
+   map < int,  map < int, list < elf_id_t > > > cloth;
+   map < elf_id_t, bool > overlaps;
+
    int x_max = 0;
    int y_max = 0;
    int squares = 0;
@@ -110,14 +115,18 @@ int main(int argc, char *argv[])
          input_file.clear();
       input_file.seekg( 0 );
 
-//    printf("pre: input_file.eof=%0d input_file.fail=%0d input_file.bad=%0d\n", input_file.eof(), input_file.fail(), input_file.bad());
+#ifdef DEBUG
+      printf("pre: input_file.eof=%0d input_file.fail=%0d input_file.bad=%0d\n", input_file.eof(), input_file.fail(), input_file.bad());
+#endif
 
       while (!input_file.fail() && 
              !input_file.eof() && 
              (input_file.getline( line, LINE_SIZE ).good())
              )
       {
-         /* char * elf = */ strtok( line, " " );
+         char * elf = strtok( line, " " );
+         int elf_id = atoi(&(elf[1]));
+
          /* char * at  = */ strtok( NULL, " " );
          char * comma = strtok( NULL, ":" );
          char * square = trim( strtok( NULL, " " ) );
@@ -131,15 +140,28 @@ int main(int argc, char *argv[])
          y_max = max(y_max, (locationy + rise));
          x_max = max(x_max, (locationx + run));
 
+         overlaps[elf_id] = false;
+
          for (int x = locationx; x < locationx + run; x++)
          {
             for (int y = locationy; y < locationy + rise; y++)
             {
-               cloth[x][y]++;
+               cloth[x][y].push_back(elf_id);
+#ifdef DEBUG
+               printf("x=%0d y=%0d using=%0ld\n", x, y, cloth[x][y].size());
+#endif
+
+               if (cloth[x][y].size() > 1)
+               {
+                  for (auto elf_list_id = cloth[x][y].begin(); elf_list_id != cloth[x][y].end(); elf_list_id++)
+                     overlaps[*elf_list_id] = true;
+               }
             }
          }
 
-         //printf("elf=%s at=%s comma=%s square=%s x=%0d y=%0d run=%0d rise=%0d\n", elf, at, comma, square, locationx, locationy, run, rise);
+#ifdef DEBUG
+         printf("elf=%s comma=%s square=%s x=%0d y=%0d run=%0d rise=%0d\n", elf, comma, square, locationx, locationy, run, rise);
+#endif
       }
 
       for (int x = 0; x < x_max; x++)
@@ -152,7 +174,7 @@ int main(int argc, char *argv[])
             {
                auto square = row->second.find(y);
 
-               if (square->second > 1)
+               if ((square != row->second.end()) && (square->second.size() > 1))
                   squares += 1;
                else 
                   non_squares += 1;
@@ -163,6 +185,19 @@ int main(int argc, char *argv[])
       }
 
       printf("squares=%0d non-squares=%0d\n", squares, non_squares);
+
+      for (auto overlap_index = overlaps.begin(); overlap_index != overlaps.end(); overlap_index++)
+      {
+#ifdef DEBUG
+         printf("elf=%0d overlap=%0d\n", overlap_index->first, overlap_index->second);
+#endif
+
+         if (overlap_index->second == false)
+         {
+            printf("no overlap for elf=%0d\n", overlap_index->first );
+         }
+      }
+
    } while (0);
 
    return 0;

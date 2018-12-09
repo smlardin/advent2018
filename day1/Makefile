@@ -1,5 +1,5 @@
-CXX := /pkg/qct/software/gnu/gcc/7.2.0/bin/g++
-CC  := /pkg/qct/software/gnu/gcc/7.2.0/bin/gcc
+CXX := g++
+CC  := gcc
 
 CPPFLAGS := -std=c++11				\
 				-Wall						\
