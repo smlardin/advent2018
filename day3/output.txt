@@ -1,1 +1,0 @@
-squares=121259 non-squares=877741
